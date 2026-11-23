@@ -1,5 +1,8 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 Flask
 ultralytics
 opencv-python-headless
 Pillow
 gunicorn
+torch==2.5.1+cpu
+torchvision==0.20.1+cpu
