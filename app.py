@@ -5,7 +5,6 @@ import uuid
 import cv2
 from flask import Flask, render_template, request
 from PIL import Image
-from ultralytics import YOLO
 
 APP_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_FOLDER", APP_DIR / "static" / "uploads"))
@@ -20,9 +19,11 @@ model = None
 
 
 def get_model():
-    """Load YOLO only when image analysis is requested, not on every web startup."""
+    """Import and load YOLO only when image analysis is requested."""
     global model
     if model is None:
+        from ultralytics import YOLO
+
         model = YOLO(str(MODEL_PATH))
     return model
 
