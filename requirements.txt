@@ -1,4 +1,4 @@
-streamlit
+Flask
 ultralytics
 opencv-python
 Pillow
