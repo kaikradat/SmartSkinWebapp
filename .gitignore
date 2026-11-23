@@ -1,0 +1,13 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Uploaded skin photos and generated detection results are private runtime data.
+/static/upload/
+/static/uploads/
+/static/results/
+/upload/
+/uploads/
+/results/
