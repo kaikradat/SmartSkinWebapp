@@ -16,7 +16,16 @@ app.config["UPLOAD_FOLDER"] = str(UPLOAD_DIR)
 app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_BYTES", 10 * 1024 * 1024))
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-model = YOLO(str(MODEL_PATH))
+model = None
+
+
+def get_model():
+    """Load YOLO only when image analysis is requested, not on every web startup."""
+    global model
+    if model is None:
+        model = YOLO(str(MODEL_PATH))
+    return model
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -35,7 +44,8 @@ def index():
             img.save(img_path)
 
             #วิเคราะห์ภาพ
-            results = model.predict(str(img_path), conf=0.25)
+            detector = get_model()
+            results = detector.predict(str(img_path), conf=0.25)
             result = results[0]
 
             # detected img + แปลงสี
@@ -50,7 +60,7 @@ def index():
             for box in result.boxes:
                 class_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                class_name = model.names[class_id]
+                class_name = detector.names[class_id]
                 diseases.append((class_name, round(conf * 100, 2)))
 
             if not diseases:
@@ -68,6 +78,7 @@ def index():
                                    diseases=diseases)
 
     return render_template("index.html", submitted=False)
+
 
 if __name__ == "__main__":
     app.run(
