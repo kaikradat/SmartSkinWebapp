@@ -1,17 +1,22 @@
+from pathlib import Path
+import os
+import uuid
+
+import cv2
 from flask import Flask, render_template, request
 from PIL import Image
 from ultralytics import YOLO
-import os
-import uuid
-import cv2
+
+APP_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_FOLDER", APP_DIR / "static" / "uploads"))
+MODEL_PATH = Path(os.environ.get("MODEL_PATH", APP_DIR / "best.pt"))
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config["UPLOAD_FOLDER"] = str(UPLOAD_DIR)
+app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_BYTES", 10 * 1024 * 1024))
 
-
-model = YOLO("best.pt")
-
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+model = YOLO(str(MODEL_PATH))
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -26,16 +31,16 @@ def index():
         if uploaded_file:
             img = Image.open(uploaded_file.stream).convert("RGB")
             img_filename = f"{uuid.uuid4().hex}_original.jpg"
-            img_path = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)
+            img_path = UPLOAD_DIR / img_filename
             img.save(img_path)
 
             #วิเคราะห์ภาพ
-            results = model.predict(img_path, conf=0.25)
+            results = model.predict(str(img_path), conf=0.25)
             result = results[0]
 
             # detected img + แปลงสี
             detect_filename = img_filename.replace("original", "detected")
-            detect_path = os.path.join(app.config['UPLOAD_FOLDER'], detect_filename)
+            detect_path = UPLOAD_DIR / detect_filename
             plotted = result.plot()
             rgb_image = cv2.cvtColor(plotted, cv2.COLOR_BGR2RGB)
             Image.fromarray(rgb_image).save(detect_path)
@@ -65,4 +70,8 @@ def index():
     return render_template("index.html", submitted=False)
 
 if __name__ == "__main__":
-    app.run(host="localhost", port=5000, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "5000")),
+        debug=os.environ.get("FLASK_DEBUG") == "1",
+    )
